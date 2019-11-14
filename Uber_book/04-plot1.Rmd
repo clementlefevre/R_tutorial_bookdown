@@ -5,12 +5,12 @@ We can plot a sample of this table to have an overview by filtering on the _hour
 ggplot(DT.max.speed.per.way.hour[, name := as.factor(name)][hour == 17], aes(ratio.over, total_rows)) + geom_point(shape =                                                                                                                     21, alpha = .4, aes(color = (name))) + facet_wrap(. ~ maxspeed) + theme(legend.position = 'None')
 ```
 
-Here we just confirm what we saw in \@ref(aggregate_merge), it seems some _maxspeed_ are not "standard" or very seldomly used by Uber.
+Here we just confirm what we saw in Chapter \@ref(aggregate), it seems some _maxspeed_ are not "standard" or very seldomly used by Uber.
 We can confirm this with a quick histogram :
 ```{r}
 ggplot(DT.max.speed.per.way.hour,aes(maxspeed))+ geom_histogram()+theme_bw()
 ```
-Indeed, 30,50,60,80 kph limits are our numbers.  
+Indeed, 30,50 and 80 kph limits are our numbers.  
 We can drop the others rows :
 ```{r}
 DT.max.speed.per.way.hour <- DT.max.speed.per.way.hour[maxspeed %in% c(30,50,80)]

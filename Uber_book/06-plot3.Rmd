@@ -7,7 +7,8 @@ The [`leaflet`](https://rstudio.github.io/leaflet/) package is the way to go whe
 
 we start by defining the data we want to plot: the percentage of speed limit excesses, at 5 am for street with more than 10 occurences, not _motorway_, neither _tunnel_ and which are at least 10 kph faster than the allowed limit :
 ```{r}
-data.to.plot <- OSM_sf.with.Uber %>% filter(hour == 5 &            total_rows>10 & ratio.over>50 & speed_minus_max>10 & fclass!='motorway' & tunnel=='F')
+data.to.plot <-
+  OSM_sf.with.Uber %>% filter(hour == 5 & total_rows > 10 & fclass != 'motorway' & tunnel == 'F')
 ```
 
 

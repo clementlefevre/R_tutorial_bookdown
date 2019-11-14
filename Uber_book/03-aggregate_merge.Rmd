@@ -1,4 +1,4 @@
-# Aggregate and Merge the data {#aggregate_merge}
+# Aggregate and Merge the data {#aggregate}
 
 ## Aggregate the UBER Data
 
