@@ -1,0 +1,55 @@
+
+# Visualizations with Leaflet {#viz_3}
+
+## Creating an interactive map with `leaflet` :
+
+The [`leaflet`](https://rstudio.github.io/leaflet/) package is the way to go when you want to implement interactive maps in R, especially when working in a [Shiny](https://shiny.rstudio.com/tutorial/) project.
+
+we start by defining the data we want to plot: the percentage of speed limit excesses, at 5 am for street with more than 10 occurences, not _motorway_, neither _tunnel_ and which are at least 10 kph faster than the allowed limit :
+```{r}
+data.to.plot <- OSM_sf.with.Uber %>% filter(hour == 5 &            total_rows>10 & ratio.over>50 & speed_minus_max>10 & fclass!='motorway' & tunnel=='F')
+```
+
+
+And here we go with Leaflet : (we filter on 5 am and use a CartoDB theme, more info [here](https://leaflet-extras.github.io/leaflet-providers/preview/))
+```{r}
+leaflet(data.to.plot)    %>% addProviderTiles(providers$Stamen.TonerLite) %>% addPolylines(
+                                        color = 'red',
+                                        weight = 2,
+                                        layerId = OSM_sf.with.Uber$osm_id)
+```
+
+
+## Extra : Club & Uber Rides 
+
+
+Now let's add the coordinates of the nightclubs/pub in Berlin:
+
+```{r}
+OSM_sf_building  <- sf::read_sf(dsn = "data/berlin_osm_shp/", layer = "gis_osm_pois_free_1")
+```
+
+Filter on club/pub/etc..
+```{r}
+OSM_sf_building.night <- OSM_sf_building %>% filter(fclass %in% c("bar","bbq","biergarten","cafe","drinking_water","fast_food","food_court","pub","restaurant","brothel","casino","cinema","nightclub","stripclub","swingerclub","biergarten"))
+
+ggplot(OSM_sf_building.night,aes(fclass))+ geom_bar(fill='steelblue')+theme_economist()+coord_flip()
+```
+
+We add those data to the Leaflet plot:
+```{r}
+leaflet(OSM_sf_building.night %>% filter(fclass == 'nightclub'))    %>% addProviderTiles(providers$Stamen.TonerLite) %>% addCircleMarkers(
+  stroke = FALSE,
+  weight = 1,
+  radius = 3,
+  fillColor = 'steelblue',
+  popup =  ~name,
+  layerId = OSM_sf_building.night$osm_id
+) %>% addPolylines(
+  data = data.to.plot,
+  color = 'red',
+  weight = 2,
+  layerId = OSM_sf.with.Uber$osm_id
+)
+```
+

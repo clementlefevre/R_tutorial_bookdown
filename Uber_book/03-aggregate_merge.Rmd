@@ -1,0 +1,70 @@
+# Aggregate and Merge the data {#aggregate_merge}
+
+## Aggregate the UBER Data
+
+Remember the column `maxspeed` from the `OSM_sf` table ? We are going to combine the `DT.Uber` table with the `OSM_sf` to compare the Uber `speed_kph_mean` with the OSM `maxspeed``:
+
+first we select only from the `OSM_sf` the fields of interest :
+```{r}
+DT.max.speed <- OSM_sf %>% dplyr::select(osm_id,fclass,name,maxspeed)
+```
+
+then we set this new table as a `data.table`, convert the column `osm_id` as numeric (because the `osm_way_id` from `DT.Uber` is already a numeric value, and finally define the index column :
+```{r}
+setDT(DT.max.speed)
+DT.max.speed[,osm_id:=as.numeric(osm_id)]
+setkey(DT.max.speed,osm_id)
+```
+
+And now, we merge this `DT.max.speed` table with the `DT.Uber` :
+```{r}
+DT.max.speed <- merge(DT.max.speed,DT.Uber, by.x='osm_id',by.y='osm_way_id')
+```
+
+with this new table we add a new column `is.over` that gives 1 if the _mean_speed_kph_ is greater than the _maxspeed_ allowed and 0 otherwise :
+```{r}
+DT.max.speed[,is.over := as.numeric(is.over <- speed_kph_mean>maxspeed)]
+```
+
+Out of sheer curiosity, how often is the speed limit respected ?
+```{r}
+DT.max.speed[,(ratio=sum(is.over)/.N)*100, ]
+```
+OK.
+
+
+Now, we check how many ways have a speed limit defined :
+```{r}
+DT.max.speed[,(ratio=sum(maxspeed>0)/.N)*100, ]
+```
+How does it looks like per maxspeed value :
+```{r}
+DT.max.speed[, .(count = .N), by = .(maxspeed)][, percentage := count / sum(count) *
+                                                  100][order(maxspeed)]
+```
+Fine, there are few ways without speed limit. (less than 0.09%).
+
+
+Hang on, we are close the end, we still want to aggregate the data per way and hour of the day. For this, we are going to use the *group by* functionality via the `by` keyword, and create new variables :
+(take note that we filter the table on the ways that have an OSM maximum speed defined)
+```{r}
+DT.max.speed.per.way.hour <-
+  DT.max.speed[maxspeed > 0][, .(
+    total_rows = .N,
+    ratio.over = sum(is.over) / (.N) * 100,
+    speed_kph_mean = speed_kph_mean <-
+      mean(speed_kph_mean),
+    maxspeed = maxspeed <-
+      mean(maxspeed),
+    speed_minus_max = speed_kph_mean - maxspeed,
+    name = first(name)
+  ), by = .(osm_id, hour)]
+```
+
+How does this new aggregated tables looks like ? (The empty square brackets are a neat `data.table` trick to print it)
+```{r}
+DT.max.speed.per.way.hour[]
+```
+For each OSM way, we have all hours of the day, the percentage of times the median speed was over the maximum speed allowed, and the delta between both.
+
+

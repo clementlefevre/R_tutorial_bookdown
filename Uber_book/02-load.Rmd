@@ -1,0 +1,107 @@
+# Load the data {#load_the_data}
+
+
+## Uber data
+For Uber, the operation is straightforward, thanks to the `fread` function from the `data.table` package. For this exercise, we will use the `data.table`package to manipulate the data, due to its speed and conciseness compared to the alternative `dplyr` package.
+```{r}
+DT.Uber <- fread('data/movement-speeds-hourly-berlin-2019-6.csv')
+```
+Once loaded. we can have a glimpse at the Uber table :
+```{r}
+str(DT.Uber)
+```
+
+Nice gesture from Uber, the _utc_timestamp_ has been also converted to other time dimensions (_year,month,day,hour_)  
+As stated on the Uber Movement metadata description, the columns `segment_id`, `start_junction_id`,`end_junction_id` correspond to the deprecated OSM (OpenStreetMap) identifiers for the ways (e.g. street/highways...) and nodes (junctions). Those 3 fields have been replace by the  `osm_way_id`, `osm_start_node_id`, and  `osm_end_node_id`.
+
+In order to keep the process efficient, we can use our first `data.table` mutation operation on the table and remove those deprecated columns :
+```{r}
+DT.Uber[,c('segment_id', 'start_junction_id','end_junction_id'):=.(NULL,NULL,NULL)]
+```
+
+The operation does in fact take place by reference, i.e we do not copy the data.table, but modify it in place, which rquires less memory.
+We check that the removal operation took place :
+```{r}
+str(DT.Uber)
+```
+Ok, the three deprecated columns have disappeared.
+
+As we saw previously thanks to the "structure" `str` command, the Uber table as 2,409,465 rows.
+Are those rows all valid, is there any missing data ? We can use the following operation to check that :
+```{r}
+DT.Uber[,.(col=names(.SD),
+           nok= nok<-colSums(is.na(.SD)),
+           ok = .N -nok,
+           total = .N)]
+```
+What have we done ? we first select the DT.Uber table, insert a comma because we do not want to filter the rows, then create four columns :
+
+* `col` : we use the `names` function to retrieve the list of column names of all the data.table columns (`.SD` for **S**ubset**D**ata)
+* `nok` : we compute the sum of non valid entries per column (`.is.na` on `.SD`), and use an intermediary variable assignment with the help of the `<-` operator (see **3.4.1** in the [R Quick Tutorial](http://franknarf1.github.io/r-tutorial/_book/tables.html#tables))
+* `ok` : logically, this is the difference between number of rows (`.N`) and the `nok`
+* `total` : the total number of rows.
+
+One good news : this table seems to be clean.
+
+
+One more thing with this `DT.Uber` : the `utc_timestamp` is of class `character`, but we want it to be of type POSIXct, which is the standard datetime format in R. For this, we use the `lubridate` package with its `ymd_hms` method :
+
+```{r}
+DT.Uber[,utc_timestamp:=ymd_hms(utc_timestamp)]
+str(DT.Uber$utc_timestamp)
+```
+Alleluja, the parsing (i.e. conversion) from class character to POSIXT was painless, which is worth mentioning.
+
+
+But, is this dataset really for June 2019 ?
+```{r}
+DT.Uber[,.(min_datetime=min(utc_timestamp),max_datetime=max(utc_timestamp))]
+```
+
+Seems so indeed.
+
+Now we can set indexing on this table, in order to, similarly to the SQL indexes, speed up the operations :
+```{r}
+setkey(DT.Uber,utc_timestamp,osm_way_id)
+```
+
+
+## OSM data
+
+Now we can load the OSM shapefile for the ways elements, with the help of the `sf` package (which is considerably faster than the `rgdal` package for read operations)
+
+```{r}
+OSM_sf <- sf::read_sf(dsn = "data/berlin_osm_shp/", layer = "gis_osm_roads_free_1")
+```
+
+What have we done ? What is a shapefile ? we can look at its structure :
+```{r}
+str(OSM_sf)
+```
+
+Nice, we have here a table with the OSM_id which we can connect to the Uber `osm_way_id`, they are brothers !
+But what kind of object is `OSM_sf` ?
+```{r}
+class(OSM_sf)
+```
+
+Well, a combination of sf, tbl_df, tbl and data.frame
+
+The last column `geometry` contains as its name figures, the coordinates of each way id (that means how to draw the street with the help of multiple coordinates).
+
+To calm down our excitment, we can plot a part of this shapefile with the use of the `filter` method (we do not want to plot the 165629 Polygons of all the ways !)
+Here we filter out the ways that are of class _motorway_ and _residential_:
+
+```{r}
+plot(st_geometry(OSM_sf%>% filter(fclass=='motorway')),col='red',reset=F)
+plot(st_geometry(OSM_sf%>% filter(fclass=='residential')),col='blue',add=T)
+```
+
+What we did here is first plot the _motorway_ class, with the `reset` parameter set to `FALSE`, to allow the second plot call with the _residential_ class to drawn on the same element.
+
+As a side note, we use the standard `plot` method of the `sf` package. One nice thing with `sf` is that you can also use the `ggplot2` package for visualization. But in our case, the amount of elements to plot (>100000) make it very slow with `ggplot2`.
+
+Now we that we have loaded our data in memory, we can start aggregating and merging those two datasets.
+
+
+

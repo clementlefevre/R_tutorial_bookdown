@@ -1,0 +1,33 @@
+# Getting the data {#getting_the_data}
+
+For this exercise, we will use two datasets, both of them already "cleaned", it will spare use the long process of data wrangling.
+
+* for Uber, just retrieve the data from this link : [download](https://movement.uber.com/explore/berlin/speeds/query?dt[tpb]=ALL_DAY&dt[wd;]=1,2,3,4,5,6,7&dt[dr][sd]=2019-06-01&dt[dr][ed]=2019-06-30&ff=&lang=en-US&lat.=47.5987542&lng.=-122.2186685&z.=12)
+
+* for OpenStreetMap, we use the GeoFabrik website to download the [`berlin-latest-free.shp.zip`](https://download.geofabrik.de/europe/germany/berlin.html) shapefile 
+
+Once we are done with those downloads (less than 1GB altogether), we can unzip and store them in the `/data` folder.
+
+Your `/data` folder should look like this :  
+
+![folder structure](img/folder_structure.png)
+
+Then we can start with the R code, create a new Notebook,and load the necessary packages with the help of `pacman`.
+What `pacman` does it it checks if the required packages are already installed and if not, install them automatically :
+
+```{r message=FALSE}
+
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(data.table,
+  'lubridate',
+  'ggplot2',
+  'leaflet',
+  'sf',
+  'plotly',
+  'ggthemes',
+  'purrr',
+  'magick',
+  'plotrix',  # For color scales
+  'classInt')
+
+```

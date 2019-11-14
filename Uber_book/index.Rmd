@@ -1,0 +1,47 @@
+--- 
+title: 'Uber Movement dataset : playing with spatial data'
+author: "Clement Lefevre"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+description: Using the Uber Movement dataset, we combine it with the OpenStreetMap
+  data for Berlin.
+documentclass: book
+link-citations: yes
+bibliography:
+- book.bib
+- packages.bib
+site: bookdown::bookdown_site
+biblio-style: apalike
+---
+
+# Context & Objectives
+
+
+## Context
+Uber released for some cities the datasets of their drivers movement. Those include the OSM way identifier, the mean and standard speed deviation. In order to anonymize them, the data have been aggregated per hour. 
+Let's have a look at the Berlin data for the month of June 2019, and how they are distributed in space and time.
+For this, we will combine those data with the OpenStreetMap shapefile for Berlin. 
+
+
+## Objectives
+Through this book, we will use some important concepts of data analysis : 
+
+* handle data formatted as table with the help of the `data.table` package,
+* create some vizualisations with the `ggplot2`,
+* create an animated map with `sf`,
+* and finally do some basic modeling with a linear regression and random Forest.
+
+## References
+
+* for `data.table`, i found the [R Quick Tutorial](http://franknarf1.github.io/r-tutorial/_book/tables.html#tables) an excellent introduction.
+* for `ggplot2`, i refer to [this](http://www.sthda.com/english/wiki/ggplot2-essentials)
+* 
+
+```{r include=FALSE}
+# automatically create a bib database for R packages
+knitr::write_bib(c(
+  .packages(), 'bookdown', 'knitr', 'rmarkdown'
+), 'packages.bib')
+```
