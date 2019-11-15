@@ -1,6 +1,6 @@
-# Aggregate and Merge the data {#aggregate}
+# Merge and Aggregate the data {#aggregate}
 
-## Aggregate the UBER Data
+## Merge the data
 
 Remember the column `maxspeed` from the `OSM_sf` table ? We are going to combine the `DT.Uber` table with the `OSM_sf` to compare the Uber `speed_kph_mean` with the OSM `maxspeed``:
 
@@ -15,6 +15,8 @@ setDT(DT.max.speed)
 DT.max.speed[,osm_id:=as.numeric(osm_id)]
 setkey(DT.max.speed,osm_id)
 ```
+
+
 
 And now, we merge this `DT.max.speed` table with the `DT.Uber` :
 ```{r}
@@ -44,6 +46,7 @@ DT.max.speed[, .(count = .N), by = .(maxspeed)][, percentage := count / sum(coun
 ```
 Fine, there are few ways without speed limit. (less than 0.09%).
 
+## Aggregate the data
 
 Hang on, we are close the end, we still want to aggregate the data per way and hour of the day. For this, we are going to use the *group by* functionality via the `by` keyword, and create new variables :
 (take note that we filter the table on the ways that have an OSM maximum speed defined)
@@ -61,7 +64,7 @@ DT.max.speed.per.way.hour <-
   ), by = .(osm_id, hour)]
 ```
 
-How does this new aggregated tables looks like ? (The empty square brackets are a neat `data.table` trick to print it)
+How does this new aggregated table looks like ? (The empty square brackets are a neat `data.table` trick to print it)
 ```{r}
 DT.max.speed.per.way.hour[]
 ```

@@ -26,6 +26,23 @@ str(DT.Uber)
 ```
 Ok, the three deprecated columns have disappeared.
 
+Now we can have a look at the structure of this table. If we understand correctly the description from Uber, each rows correspond to the aggregation of n trips per hour slot per`osm_way_id` (e.g. a part of the street), and per origin and destination (`osm_start_node_id` & `osm_end_node_id`). 
+
+Let's take a sample of the table :
+
+```{r}
+DT.Uber[osm_way_id=='169753571'&utc_timestamp=="2019-06-02T11:00:00.000Z"][order(utc_timestamp)][,!c("month","day","year","hour")]
+```
+
+Let's check if there are no duplicates :
+
+```{r}
+DT.Uber[,.(count=.N),by=.(osm_way_id,utc_timestamp,day,osm_start_node_id,osm_end_node_id)][order(-count)][,.(mean_count=mean(count),std_count=sd(count))]
+```
+All right, the `count` value is always equal to 1.
+
+From now on, as our aim is to evaluate the overall trips density and speed, as for the sake of simplicity, we keep our scope on the `osm_way_id` level rather the direction within the `osm_way_id`, which by the way, and we can figure it out on the Uber website, is not easy to visualize.
+
 As we saw previously thanks to the "structure" `str` command, the Uber table as 2,409,465 rows.
 Are those rows all valid, is there any missing data ? We can use the following operation to check that :
 ```{r}
@@ -90,14 +107,15 @@ Well, a combination of sf, tbl_df, tbl and data.frame
 The last column `geometry` contains as its name figures, the coordinates of each way id (that means how to draw the street with the help of multiple coordinates).
 
 To calm down our excitment, we can plot a part of this shapefile with the use of the `filter` method (we do not want to plot the 165629 Polygons of all the ways !)
-Here we filter out the ways that are of class _motorway_ and _residential_:
+Here we filter out the ways that are of class _motorway_ and _residential_ and the streets with names containing "Marx" :
 
 ```{r}
-plot(st_geometry(OSM_sf%>% filter(fclass=='motorway')),col='red',reset=F)
-plot(st_geometry(OSM_sf%>% filter(fclass=='residential')),col='blue',add=T)
+plot(st_geometry(OSM_sf%>% filter(fclass=='motorway')),col='navy',reset=F)
+plot(st_geometry(OSM_sf%>% filter(fclass=='residential')),col='lightblue',add=T)
+plot(st_geometry(OSM_sf%>% filter(grepl('Marx',name))),col='red',add=T)
 ```
 
-What we did here is first plot the _motorway_ class, with the `reset` parameter set to `FALSE`, to allow the second plot call with the _residential_ class to drawn on the same element.
+What we did here is first plot the _motorway_ class, with the `reset` parameter set to `FALSE`, to allow the second and third plot calls with the _residential_ class  & name containing 'Marx' to be drawn on the same figure.
 
 As a side note, we use the standard `plot` method of the `sf` package. One nice thing with `sf` is that you can also use the `ggplot2` package for visualization. But in our case, the amount of elements to plot (>100000) make it very slow with `ggplot2`.
 

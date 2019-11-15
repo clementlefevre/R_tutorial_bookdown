@@ -1,56 +1,96 @@
 
 # Visualizations with Leaflet {#viz_3}
 
-## Creating an interactive map with `leaflet` :
+
+
+## Plot rides frequencies
+
+Let's have a look at the distribution per hour of the day of the number of aggregated trips :
+
+```{r}
+ggplot(OSM_sf.with.Uber,aes( as.factor(hour),total_rows)) + geom_boxplot()+ theme_economist()
+```
+So many outliers...
+
 
 The [`leaflet`](https://rstudio.github.io/leaflet/) package is the way to go when you want to implement interactive maps in R, especially when working in a [Shiny](https://shiny.rstudio.com/tutorial/) project.
 
-we start by defining the data we want to plot: the percentage of speed limit excesses, at 5 am for street with more than 10 occurences, not _motorway_, neither _tunnel_ and which are at least 10 kph faster than the allowed limit :
+we start by defining the data we want to plot: the density of trips, at 5 am for street with more than 10 occurences, not _motorway_, neither _tunnel_  :
 ```{r}
 data.to.plot <-
-  OSM_sf.with.Uber %>% filter(hour == 5 & total_rows > 10 & fclass != 'motorway' & tunnel == 'F')
+  OSM_sf.with.Uber %>% filter(hour == 2   &
+                                fclass != 'motorway' & tunnel == 'F')
+
+colorPalette <-
+  colorQuantile("plasma",
+                data.to.plot$total_rows,
+                n = 5,
+                reverse = T)
 ```
 
 
 And here we go with Leaflet : (we filter on 5 am and use a CartoDB theme, more info [here](https://leaflet-extras.github.io/leaflet-providers/preview/))
-```{r}
-leaflet(data.to.plot)    %>% addProviderTiles(providers$Stamen.TonerLite) %>% addPolylines(
-                                        color = 'red',
-                                        weight = 2,
-                                        layerId = OSM_sf.with.Uber$osm_id)
-```
 
 
-## Extra : Club & Uber Rides 
-
-
-Now let's add the coordinates of the nightclubs/pub in Berlin:
+Now let's add the coordinates of the nightclubs in Berlin. For this, we load an other shapefile, the one with the buildings informations, from the GeoFabrik folder :
 
 ```{r}
 OSM_sf_building  <- sf::read_sf(dsn = "data/berlin_osm_shp/", layer = "gis_osm_pois_free_1")
 ```
 
-Filter on club/pub/etc..
+Let's filter the  night life amenities :
 ```{r}
 OSM_sf_building.night <- OSM_sf_building %>% filter(fclass %in% c("bar","bbq","biergarten","cafe","drinking_water","fast_food","food_court","pub","restaurant","brothel","casino","cinema","nightclub","stripclub","swingerclub","biergarten"))
 
 ggplot(OSM_sf_building.night,aes(fclass))+ geom_bar(fill='steelblue')+theme_economist()+coord_flip()
 ```
 
-We add those data to the Leaflet plot:
+We add the _nightclub_ class data to the Leaflet plot :
 ```{r}
-leaflet(OSM_sf_building.night %>% filter(fclass == 'nightclub'))    %>% addProviderTiles(providers$Stamen.TonerLite) %>% addCircleMarkers(
-  stroke = FALSE,
-  weight = 1,
+leaflet(OSM_sf_building.night %>% filter(fclass %in% c('nightclub')))    %>% addProviderTiles(providers$CartoDB.DarkMatter) %>% addCircleMarkers(
+  stroke = F,
+  fill = T,
+  fillOpacity = 0.3,
+  weight = 0.5,
   radius = 3,
-  fillColor = 'steelblue',
-  popup =  ~name,
-  layerId = OSM_sf_building.night$osm_id
-) %>% addPolylines(
-  data = data.to.plot,
-  color = 'red',
-  weight = 2,
-  layerId = OSM_sf.with.Uber$osm_id
-)
+  color = 'white',
+  popup =  ~ name,
+  label =  ~ name,
+  layerId = OSM_sf_building.night$osm_id) %>%  addPolylines(data=data.to.plot,
+                                        color = ~colorPalette(data.to.plot$total_rows),
+                                        weight = 1,
+                                        layerId = OSM_sf.with.Uber$osm_id)%>% addLegend(data=data.to.plot,"bottomright", pal = colorPalette, values = ~total_rows,
+    title = "Rides density quantiles",
+    labFormat = labelFormat(prefix = ""),
+    opacity = 1
+  )
+```
+
+## Plot frequency of speed limit excesses
+
+Now let's procees the same way to visualize the frequency of speed exceses :
+```{r}
+data.to.plot <-
+  OSM_sf.with.Uber %>% filter(hour == 2   & total_rows>50 &
+                                fclass != 'motorway' & tunnel == 'F')
+
+colorPalette <-
+  colorNumeric("Reds",
+                data.to.plot$ratio.over,
+               
+                reverse = F)
+```
+
+
+```{r}
+leaflet(data.to.plot)    %>% addProviderTiles(providers$CartoDB.DarkMatter) %>% addPolylines(
+                                        color = ~colorPalette(data.to.plot$ratio.over),
+                                        weight = ~log(1+speed_minus_max),
+                                        label=~paste0(name,':',round(ratio.over,0),'% / ',round(speed_minus_max,0),' kph over in average'),
+                                        layerId = OSM_sf.with.Uber$osm_id)%>% addLegend("bottomright", pal = colorPalette, values = ~ratio.over,
+    title = "Speed excess frequency % ",
+    labFormat = labelFormat(suffix =  " %"),
+    opacity = 1
+  )
 ```
 

@@ -26,18 +26,17 @@ For this, we will combine those data with the OpenStreetMap shapefile for Berlin
 
 
 ## Objectives
-Through this book, we will use some important concepts of data analysis : 
+Through this book, we will use some concepts of data analysis : 
 
 * handle data formatted as table with the help of the `data.table` package,
 * create some vizualisations with the `ggplot2`,
-* create an animated map with `sf`,
-* and finally do some basic modeling with a linear regression and random Forest.
+* create an animated map with `sf` and an interactive one with `leaflet`.
 
 ## References
 
 * for `data.table`, i found the [R Quick Tutorial](http://franknarf1.github.io/r-tutorial/_book/tables.html#tables) an excellent introduction.
 * for `ggplot2`, i refer to [this](http://www.sthda.com/english/wiki/ggplot2-essentials)
-* 
+* for modeling and data analysis, i kindly refer to [The Analytic Edge](https://www.edx.org/course/the-analytics-edge) course, maybe not as fancy as datacamp programs, but free and with a very progressive and accessible learning curve. I personally get into R thanks to this course, the [Coursera Stats in R](https://fr.coursera.org/specializations/statistics) and the `Exploratory_Data_Analysis` interacive console-based course from [Swirl](https://swirlstats.com/students.html).  
 
 ```{r include=FALSE}
 # automatically create a bib database for R packages
