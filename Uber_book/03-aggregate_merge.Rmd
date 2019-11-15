@@ -2,7 +2,7 @@
 
 ## Merge the data
 
-Remember the column `maxspeed` from the `OSM_sf` table ? We are going to combine the `DT.Uber` table with the `OSM_sf` to compare the Uber `speed_kph_mean` with the OSM `maxspeed``:
+Remember the column `maxspeed` from the `OSM_sf` table ? We are going to combine the `DT.Uber` table with the `OSM_sf` to compare the Uber `speed_kph_mean` with the OSM `maxspeed`:
 
 first we select only from the `OSM_sf` the fields of interest :
 ```{r}
@@ -28,7 +28,7 @@ with this new table we add a new column `is.over` that gives 1 if the _mean_spee
 DT.max.speed[,is.over := as.numeric(is.over <- speed_kph_mean>maxspeed)]
 ```
 
-Out of sheer curiosity, how often is the speed limit respected ?
+Out of sheer curiosity, how often is the speed limit not respected ?
 ```{r}
 DT.max.speed[,(ratio=sum(is.over)/.N)*100, ]
 ```

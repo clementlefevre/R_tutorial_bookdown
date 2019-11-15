@@ -1,9 +1,7 @@
 
-# Visualizations with Leaflet {#viz_3}
+# Visualizations with Leaflet I{#viz_3}
 
-
-
-## Plot rides frequencies
+## Plot densitiy of rides
 
 Let's have a look at the distribution per hour of the day of the number of aggregated trips :
 
@@ -65,32 +63,3 @@ leaflet(OSM_sf_building.night %>% filter(fclass %in% c('nightclub')))    %>% add
     opacity = 1
   )
 ```
-
-## Plot frequency of speed limit excesses
-
-Now let's procees the same way to visualize the frequency of speed exceses :
-```{r}
-data.to.plot <-
-  OSM_sf.with.Uber %>% filter(hour == 2   & total_rows>50 &
-                                fclass != 'motorway' & tunnel == 'F')
-
-colorPalette <-
-  colorNumeric("Reds",
-                data.to.plot$ratio.over,
-               
-                reverse = F)
-```
-
-
-```{r}
-leaflet(data.to.plot)    %>% addProviderTiles(providers$CartoDB.DarkMatter) %>% addPolylines(
-                                        color = ~colorPalette(data.to.plot$ratio.over),
-                                        weight = ~log(1+speed_minus_max),
-                                        label=~paste0(name,':',round(ratio.over,0),'% / ',round(speed_minus_max,0),' kph over in average'),
-                                        layerId = OSM_sf.with.Uber$osm_id)%>% addLegend("bottomright", pal = colorPalette, values = ~ratio.over,
-    title = "Speed excess frequency % ",
-    labFormat = labelFormat(suffix =  " %"),
-    opacity = 1
-  )
-```
-
